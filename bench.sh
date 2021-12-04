@@ -4,16 +4,17 @@ test_rev_buffersize() {
 	local rev="$1"
 	local buffersize="$2"
 
+	cd azmq
 	echo
 	echo "testing commit: $(git log --oneline -1 $rev)"
 	echo "buffer size: $buffersize"
-
 	git checkout "$rev" >/dev/null
 	# Abort if working dir not clean
 	[ -z "$(git diff)" ]
+	cd ..
 
 	echo "compiling"
-	clang++ -std=c++17 -Wall -Wextra -O2 -pthread iobench.cpp -o iobench -lzmq -lboost_regex
+	clang++ -std=c++17 -Wall -Wextra -Iazmq -O2 -pthread iobench.cpp -o iobench -lzmq -lboost_regex
 
 	for i in $(seq 1 100); do
 		echo "run $i"
@@ -27,6 +28,10 @@ test_rev_buffersize() {
 		timeout 10s ./iobench both "$buffersize" || true
 	done
 }
+
+if [[ ! -d azmq ]]; then
+	git clone -b fix-op-leak git@github.com:dkl/azmq.git
+fi
 
 # original master
 GIT_REV_ORIGINAL=6675a0ab6d8442fc35648f566b748bde97d764f2
